@@ -170,7 +170,7 @@ namespace EasySearchApi.Controllers
             return CreatedAtAction("GetDocument", new { id = document.Id }, document); ;
         }
 
-        [HttpGet("/search/{Id1}/{Id2}")]
+        [HttpGet("/DocumentSimilarity/{Id1}/{Id2}")]
         public async Task<IActionResult> DocumentSimilarity(int Id1,int Id2)
         {
             var doc1Nullable = await _context.Documents.FindAsync(Id1);

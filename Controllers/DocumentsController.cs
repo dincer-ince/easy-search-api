@@ -8,6 +8,10 @@ using Microsoft.EntityFrameworkCore;
 using EasySearchApi.Data;
 using EasySearchApi.Models;
 using EasySearchApi.Models.DTOs;
+using System.Diagnostics;
+using EasySearchApi.Services;
+using Microsoft.Identity.Client;
+using EasySearchApi.Helpers;
 
 namespace EasySearchApi.Controllers
 {
@@ -90,19 +94,25 @@ namespace EasySearchApi.Controllers
         [HttpPost]
         public async Task<ActionResult<Document>> PostDocument(CreateDocumentDTO request)
         {
+            //TODO : Move logic from controller to repositories
             var dictionaryId = request.DictionaryID;
             var rawDocument = request.RawDocument;
+
+
+            //Check prereqs ----
             if (_context.Documents == null)
             {
                 return Problem("Entity set 'DataContext.Documents'  is null.");
             }
+
             var dictionary = await _context.Dictionaries.FindAsync(dictionaryId);
             if (dictionary == null)
             {
                 return Problem("No dictionary");
             }
-            string[] wordsInDoc = rawDocument.Split();
-
+            //------
+            
+            //Prepare document
             var document = new Document()
             {
                 rawDocument = rawDocument,
@@ -112,12 +122,19 @@ namespace EasySearchApi.Controllers
 
             };
 
+            string[] tokenized = PreProcessService.NormalizeTokenizeStop(document);
+            var wordsInDoc = PreProcessService.LemmatizeWords(tokenized);
+
+
             _context.Documents.Add(document);
             await _context.SaveChangesAsync();
 
+            var wordDb = await _context.Words.ToListAsync();
+
             foreach (string word in wordsInDoc)
             {
-                var wordInDb = await _context.Words.Where(x => x.term.Equals(word)).FirstOrDefaultAsync();
+                //var wordInDb = await _context.Words.FirstOrDefaultAsync(x => x.term.Equals(word));
+                var wordInDb = wordDb.FirstOrDefault(x=>x.term.Equals(word));
                 if (wordInDb == null)
                 {
                     wordInDb = new Word();
@@ -125,6 +142,7 @@ namespace EasySearchApi.Controllers
                     wordInDb.documents = new List<DocumentWord>();
                     _context.Words.Add(wordInDb);
                     _context.SaveChanges();
+                    wordDb.Add(wordInDb);
                 }
                 var docWord = document.words.FirstOrDefault(x => x.word.Id == wordInDb.Id);
                 if (docWord == null)
@@ -140,11 +158,53 @@ namespace EasySearchApi.Controllers
 
             }
 
+            document.numberOfWords = wordsInDoc.Count;
+
+            dictionary.NumberOfDocuments++;
+            dictionary.totalNumberOfWords += wordsInDoc.Count;
+
             await _context.SaveChangesAsync();
 
+            
 
-            return CreatedAtAction("GetDocument", new { id = document.Id }, document);
+            return CreatedAtAction("GetDocument", new { id = document.Id }, document); ;
         }
+
+        [HttpGet("/search/{Id1}/{Id2}")]
+        public async Task<IActionResult> DocumentSimilarity(int Id1,int Id2)
+        {
+            var doc1Nullable = await _context.Documents.FindAsync(Id1);
+            var doc2Nullable = await _context.Documents.FindAsync(Id2);
+            
+            if(doc1Nullable == null || doc2Nullable == null)
+            {
+                return Problem("Document doesn't exist.");
+                
+            }
+            Document doc1 = doc1Nullable;
+            Document doc2 = doc2Nullable;
+
+            if (doc1.dictionaryId!= doc2.dictionaryId) 
+            {
+                return Problem("Documents are in different dictionaries.");
+            }
+
+
+            var words = _context.Words.Include(w => w.documents).ThenInclude(w => w.document)
+                .Where(w => w.documents.
+                            Where(d => d.document.dictionaryId == doc1.dictionaryId).Any())
+                .ToList();
+
+            double[] doc1Vector = VectorizationHelper.TfIdfTransform(doc1,words);
+            double[] doc2Vector = VectorizationHelper.TfIdfTransform(doc2,words);
+
+            var similarityResult = CosineSimilarityHelper.CosineSimilarity(doc1Vector, doc2Vector);
+
+
+            return Ok(similarityResult);
+        }
+
+        
 
         // DELETE: api/Documents/5
         [HttpDelete("{id}")]

@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using EasySearchApi.Data;
 using EasySearchApi.Models;
+using EasySearchApi.Repository.Repositories;
+using EasySearchApi.Repository.IRepositories;
 
 namespace EasySearchApi.Controllers
 {
@@ -15,21 +17,19 @@ namespace EasySearchApi.Controllers
     public class UsersController : ControllerBase
     {
         private readonly DataContext _context;
+        private readonly IUserRepository _repository;
 
-        public UsersController(DataContext context)
+        public UsersController(DataContext context, IUserRepository repository)
         {
             _context = context;
+            _repository = repository;
         }
 
         // GET: api/Users
         [HttpGet]
         public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
-          if (_context.Users == null)
-          {
-              return NotFound();
-          }
-            return await _context.Users.Include(c=> c.dictionaries).ToListAsync();
+            return Ok(_repository.GetAll());
         }
 
         // GET: api/Users/5

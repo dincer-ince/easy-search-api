@@ -12,6 +12,7 @@ using System.Diagnostics;
 using EasySearchApi.Services;
 using Microsoft.Identity.Client;
 using EasySearchApi.Helpers;
+using EasySearchApi.Migrations;
 
 namespace EasySearchApi.Controllers
 {
@@ -28,13 +29,19 @@ namespace EasySearchApi.Controllers
 
         // GET: api/Documents
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Document>>> GetDocuments()
+        public async Task<ActionResult<IEnumerable<CreateDocumentDTO>>> GetDocuments()
         {
             if (_context.Documents == null)
             {
                 return NotFound();
             }
-            return await _context.Documents.AsNoTracking().Include(c => c.words).ThenInclude(wordDoc => wordDoc.word).ToListAsync();
+            var documents = await _context.Documents.AsNoTracking().ToListAsync();
+            List<CreateDocumentDTO> result = new List<CreateDocumentDTO>();
+            documents.ForEach(document =>
+            {
+                result.Add(new CreateDocumentDTO { DictionaryID = document.dictionaryId, RawDocument = document.rawDocument });
+            });
+            return result;
         }
 
         // GET: api/Documents/5
@@ -230,5 +237,44 @@ namespace EasySearchApi.Controllers
         {
             return (_context.Documents?.Any(e => e.Id == id)).GetValueOrDefault();
         }
+
+
+        
+        [HttpGet("posts")]
+        public async Task<IActionResult> GetPosts()
+        {
+            if (_context.Documents == null)
+            {
+                return NotFound();
+            }
+            var documents = await _context.Documents.AsNoTracking().Select(x =>new 
+            { 
+                id = x.Id,
+                title = x.Title
+            }).ToListAsync();
+            
+            return Ok(documents);
+        }
+
+        [HttpGet("post/{id}")]
+        public async Task<IActionResult> GetPost(int id)
+        {
+            if (_context.Documents == null)
+            {
+                return NotFound();
+            }
+            var documents = await _context.Documents.AsNoTracking().Where(x=>x.Id==id).Select(x => new
+            {
+                id=x.Id,
+                title = x.Title,
+                post = x.rawDocument,
+                numberOfWords = x.numberOfWords
+            }).FirstOrDefaultAsync();
+
+            return Ok(documents);
+        }
     }
 }
+
+
+

@@ -6,6 +6,7 @@ namespace EasySearchApi.Models
     {
         [Key]
         public int Id { get; set; }
+        public string Title { get; set; } = string.Empty;
         public string rawDocument { get; set; } = string.Empty;
 
         public Dictionary dictionary { get; set; }

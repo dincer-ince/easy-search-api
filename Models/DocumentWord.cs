@@ -9,7 +9,7 @@ namespace EasySearchApi.Models
         public int Id { get; set; }
 
         public Word word { get; set; }
-        public int wordId { get; set; }
+        public Guid wordId { get; set; }
         public Document document { get; set; }
         public int documentId { get; set; }
 

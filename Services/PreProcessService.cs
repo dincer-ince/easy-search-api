@@ -12,6 +12,7 @@ namespace EasySearchApi.Services
             var stream = File.OpenRead(filePath);
             var lemmatizer = new Lemmatizer(stream);
             var newWords = new List<string>();
+            if(words == null) return new List<string>();
             for(int i = 0; i < words.Length; i++)
             {
                 newWords.Add(lemmatizer.Lemmatize(words[i]));

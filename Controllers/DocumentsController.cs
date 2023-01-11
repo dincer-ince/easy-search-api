@@ -12,7 +12,8 @@ using System.Diagnostics;
 using EasySearchApi.Services;
 using Microsoft.Identity.Client;
 using EasySearchApi.Helpers;
-using EasySearchApi.Migrations;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Azure.Core;
 
 namespace EasySearchApi.Controllers
 {
@@ -122,33 +123,46 @@ namespace EasySearchApi.Controllers
             //Prepare document
             var document = new Document()
             {
+                Title=request.Title,
                 rawDocument = rawDocument,
                 dictionaryId = dictionaryId,
                 dictionary = dictionary,
-                words = new List<DocumentWord>(),
-
+                words = new List<DocumentWord>()
             };
 
+            createDocument(document);
+
+            dictionary.NumberOfDocuments++;
+            dictionary.totalNumberOfWords += document.numberOfWords;
+
+            await _context.SaveChangesAsync();
+
+            
+
+            return CreatedAtAction("GetDocument", new { id = document.Id }, document); ;
+        }
+
+        private Document createDocument(Document document)
+        {
             string[] tokenized = PreProcessService.NormalizeTokenizeStop(document);
             var wordsInDoc = PreProcessService.LemmatizeWords(tokenized);
 
 
             _context.Documents.Add(document);
-            await _context.SaveChangesAsync();
+            
 
-            var wordDb = await _context.Words.ToListAsync();
+            var wordDb = _context.Words.ToList();
 
             foreach (string word in wordsInDoc)
             {
                 //var wordInDb = await _context.Words.FirstOrDefaultAsync(x => x.term.Equals(word));
-                var wordInDb = wordDb.FirstOrDefault(x=>x.term.Equals(word));
+                var wordInDb = wordDb.FirstOrDefault(x => x.term.Equals(word));
                 if (wordInDb == null)
                 {
                     wordInDb = new Word();
                     wordInDb.term = word;
                     wordInDb.documents = new List<DocumentWord>();
                     _context.Words.Add(wordInDb);
-                    _context.SaveChanges();
                     wordDb.Add(wordInDb);
                 }
                 var docWord = document.words.FirstOrDefault(x => x.word.Id == wordInDb.Id);
@@ -167,27 +181,30 @@ namespace EasySearchApi.Controllers
 
             document.numberOfWords = wordsInDoc.Count;
 
-            dictionary.NumberOfDocuments++;
-            dictionary.totalNumberOfWords += wordsInDoc.Count;
 
-            await _context.SaveChangesAsync();
 
-            
-
-            return CreatedAtAction("GetDocument", new { id = document.Id }, document); ;
+            return document;
         }
 
         [HttpGet("/DocumentSimilarity/{Id1}/{Id2}")]
-        public async Task<IActionResult> DocumentSimilarity(int Id1,int Id2)
+        public async Task<ActionResult<double>> DocumentSimilarity(int Id1,int Id2)
         {
-            var doc1Nullable = await _context.Documents.FindAsync(Id1);
-            var doc2Nullable = await _context.Documents.FindAsync(Id2);
-            
-            if(doc1Nullable == null || doc2Nullable == null)
+            var doc1Nullable =  _context.Documents.Find(Id1);
+            var doc2Nullable =  _context.Documents.Find(Id2);
+
+            if (doc1Nullable == null)
             {
-                return Problem("Document doesn't exist.");
-                
+                doc1Nullable = _context.Documents.Local.Where(x => x.Id == Id1).FirstOrDefault();
+
+                if (doc1Nullable == null) return Problem("Document doesn't exist.");
             }
+            if (doc2Nullable == null)
+            { 
+                doc2Nullable = _context.Documents.Local.Where(x => x.Id == Id2).FirstOrDefault();
+
+                if (doc2Nullable == null) return Problem("Document doesn't exist.");
+            }
+
             Document doc1 = doc1Nullable;
             Document doc2 = doc2Nullable;
 
@@ -211,7 +228,93 @@ namespace EasySearchApi.Controllers
             return Ok(similarityResult);
         }
 
-        
+        [HttpGet("/similarDocuments/{number}/{id}")] 
+        public async Task<IActionResult> MostSimilarDocuments(int number, int id)
+        {
+            var docNullable = _context.Documents.Find(id);
+
+
+            if (docNullable == null)
+            {
+                docNullable = _context.Documents.Local.Where(x => x.Id == id).First();
+                if(docNullable == null) return Problem("Document Not Found");
+            }
+            
+            Document doc = docNullable;
+
+            var documentsCompared= await _context.Documents.Where(x=> x.dictionaryId == doc.dictionaryId && x.Id!=doc.Id).Select(x=>x.Id).ToArrayAsync();
+
+            var results = new List<KeyValuePair<int, double>>();
+            for(int i = 0; i < documentsCompared.Length; i++)
+            {
+                var test = await DocumentSimilarity(id, documentsCompared[i]);
+                var testest = test.Result as OkObjectResult;
+                
+                double result = (double)testest.Value;
+                if (result > 0) results.Add(new KeyValuePair<int, double>(documentsCompared[i], result));
+            }
+
+            var list = results.OrderByDescending(x => x.Value).Take(number).Select(x=>x.Key).ToArray();
+
+            var documents = new List<Document>();
+
+            for (int i = 0; i < list.Length; i++)
+            {
+                var document = _context.Documents.AsNoTracking().Where(x => x.Id == list[i]).FirstOrDefault();
+                documents.Add(document);
+            }
+            var last = documents.Select(x => new
+            {
+                id = x.Id,
+                title = x.Title,
+                post = x.rawDocument,
+                numberOfWords = x.numberOfWords,
+            }).ToList();
+
+
+            //var documents = await _context.Documents.AsNoTracking().Where(x => list.Contains(x.Id)).Select(x => new
+            //{
+            //    id = x.Id,
+            //    title = x.Title,
+            //    post = x.rawDocument,
+            //    numberOfWords = x.numberOfWords
+            //}).ToListAsync();
+
+            return Ok(last);
+        }
+
+        [HttpGet("search/{text}")]
+        public async Task<IActionResult> Search(string text)
+        {
+            //Check prereqs ----
+            if (_context.Documents == null)
+            {
+                return Problem("Entity set 'DataContext.Documents'  is null.");
+            }
+
+            var dictionary = await _context.Dictionaries.FindAsync(1);
+            if (dictionary == null)
+            {
+                return Problem("No dictionary");
+            }
+            //------
+
+            //Prepare document
+            var document = new Document()
+            {
+                Title = "search",
+                rawDocument = text,
+                dictionaryId = 1,
+                dictionary = dictionary,
+                words = new List<DocumentWord>()
+            };
+
+            createDocument(document);
+
+            var result = await MostSimilarDocuments(5, document.Id);
+
+            return result;
+        }
 
         // DELETE: api/Documents/5
         [HttpDelete("{id}")]
@@ -237,6 +340,8 @@ namespace EasySearchApi.Controllers
         {
             return (_context.Documents?.Any(e => e.Id == id)).GetValueOrDefault();
         }
+
+        
 
 
         

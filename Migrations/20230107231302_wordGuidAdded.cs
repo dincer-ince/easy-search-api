@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
@@ -6,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EasySearchApi.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class wordGuidAdded : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -30,8 +31,7 @@ namespace EasySearchApi.Migrations
                 name: "Words",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
                     term = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
@@ -46,7 +46,9 @@ namespace EasySearchApi.Migrations
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Name = table.Column<string>(type: "text", nullable: false),
-                    userId = table.Column<int>(type: "integer", nullable: false)
+                    userId = table.Column<int>(type: "integer", nullable: false),
+                    NumberOfDocuments = table.Column<int>(type: "integer", nullable: false),
+                    totalNumberOfWords = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -65,8 +67,10 @@ namespace EasySearchApi.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Title = table.Column<string>(type: "text", nullable: false),
                     rawDocument = table.Column<string>(type: "text", nullable: false),
-                    dictionaryId = table.Column<int>(type: "integer", nullable: false)
+                    dictionaryId = table.Column<int>(type: "integer", nullable: false),
+                    numberOfWords = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -85,7 +89,7 @@ namespace EasySearchApi.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    wordId = table.Column<int>(type: "integer", nullable: false),
+                    wordId = table.Column<Guid>(type: "uuid", nullable: false),
                     documentId = table.Column<int>(type: "integer", nullable: false),
                     count = table.Column<int>(type: "integer", nullable: false)
                 },

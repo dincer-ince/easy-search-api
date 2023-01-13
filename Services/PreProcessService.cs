@@ -8,7 +8,7 @@ namespace EasySearchApi.Services
     {
         public static List<string> LemmatizeWords(string[] words)
         {
-            var filePath = "./services/full7z-multext-en.lem";
+            var filePath = "./full7z-multext-en.lem";
             var stream = File.OpenRead(filePath);
             var lemmatizer = new Lemmatizer(stream);
             var newWords = new List<string>();

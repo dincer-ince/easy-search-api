@@ -186,7 +186,7 @@ namespace EasySearchApi.Controllers
             return document;
         }
 
-        [HttpGet("/DocumentSimilarity/{Id1}/{Id2}")]
+        [HttpGet("DocumentSimilarity/{Id1}/{Id2}")]
         public async Task<ActionResult<double>> DocumentSimilarity(int Id1,int Id2)
         {
             var doc1Nullable =  _context.Documents.Find(Id1);
@@ -228,7 +228,7 @@ namespace EasySearchApi.Controllers
             return Ok(similarityResult);
         }
 
-        [HttpGet("/similarDocuments/{number}/{id}")] 
+        [HttpGet("similarDocuments/{number}/{id}")] 
         public async Task<IActionResult> MostSimilarDocuments(int number, int id)
         {
             var docNullable = _context.Documents.Find(id);
@@ -254,13 +254,13 @@ namespace EasySearchApi.Controllers
                 if (result > 0) results.Add(new KeyValuePair<int, double>(documentsCompared[i], result));
             }
 
-            var list = results.OrderByDescending(x => x.Value).Take(number).Select(x=>x.Key).ToArray();
+            var list = results.OrderByDescending(x => x.Value).Take(number).ToArray();
 
             var documents = new List<Document>();
 
             for (int i = 0; i < list.Length; i++)
             {
-                var document = _context.Documents.AsNoTracking().Where(x => x.Id == list[i]).FirstOrDefault();
+                var document = _context.Documents.AsNoTracking().Where(x => x.Id == list[i].Key).FirstOrDefault();
                 documents.Add(document);
             }
             var last = documents.Select(x => new
@@ -271,6 +271,17 @@ namespace EasySearchApi.Controllers
                 numberOfWords = x.numberOfWords,
             }).ToList();
 
+            var withSimilarity = from a in list
+                                 join b in last on a.Key equals b.id
+                                 select new
+                                 {
+                                     id = b.id,
+                                     title = b.title,
+                                     post = b.post,
+                                     numberOfWords = b.numberOfWords,
+                                     similarity = a.Value
+                                 };
+
 
             //var documents = await _context.Documents.AsNoTracking().Where(x => list.Contains(x.Id)).Select(x => new
             //{
@@ -280,7 +291,7 @@ namespace EasySearchApi.Controllers
             //    numberOfWords = x.numberOfWords
             //}).ToListAsync();
 
-            return Ok(last);
+            return Ok(withSimilarity);
         }
 
         [HttpGet("search/{text}")]

@@ -1,22 +1,24 @@
-﻿using EasySearchApi.Repository.IRepositories;
-using Microsoft.AspNetCore.Http.HttpResults;
+﻿using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
 
-namespace EasySearchApi.Repository.Repositories
+namespace EasySearchApi.Base
 {
     public class GenericRepository<T> : IGenericRepository<T> where T : class
     {
         protected DataContext _context;
+        protected UserManager<User> _userManager;
         protected DbSet<T> dbSet;
         //protected readonly ILogger _logger;
 
-        public GenericRepository(DataContext context)
+        public GenericRepository(DataContext context, UserManager<User> userManager)
         {
             _context = context;
             //_logger = loggerFactory.CreateLogger("Logger");
             dbSet = context.Set<T>();
+            _userManager = userManager;
         }
 
         public virtual async Task<IEnumerable<T>> GetAll()
@@ -52,7 +54,7 @@ namespace EasySearchApi.Repository.Repositories
             {
                 dbSet.Add(entity);
                 await _context.SaveChangesAsync();
-                return entity; 
+                return entity;
             }
             catch (Exception ex)
             {
@@ -76,12 +78,12 @@ namespace EasySearchApi.Repository.Repositories
             }
         }
 
-        public  async Task<bool> Delete(int Id)
+        public async Task<bool> Delete(int Id)
         {
             try
             {
                 var user = await dbSet.FindAsync(Id);
-                if(user !=null)
+                if (user != null)
                 {
                     dbSet.Remove(user);
                     await _context.SaveChangesAsync();
@@ -92,7 +94,7 @@ namespace EasySearchApi.Repository.Repositories
                     return false;
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 //_logger.LogError(ex, "{Result} Repository Delete method error", typeof(T));
                 return false;

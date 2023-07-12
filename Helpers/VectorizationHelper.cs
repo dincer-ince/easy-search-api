@@ -9,14 +9,14 @@
 
             foreach(Word word in words)
             {
-                if(word.documents.Where(x=>x.document == document).Any())
+                if(word.Documents.Where(x=>x.Document == document).Any())
                 {
-                    var docWord = document.words.Where(x => x.word.Equals(word)).First();
+                    var docWord = document.Words.Where(x => x.Word.Equals(word)).First();
 
                     if(docWord != null)
                     {
-                        var tf = docWord.count;
-                        var df = word.documents.Where(x => x.document.dictionaryId == document.dictionaryId).Count();
+                        var tf = docWord.Count;
+                        var df = word.Documents.Where(x => x.Document.DictionaryId == document.DictionaryId).Count();
                         var idf = Math.Log((numberOfWords - df +0.5)/(df+0.5));
 
                         vector.Add(tf*idf);

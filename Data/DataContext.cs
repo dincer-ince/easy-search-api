@@ -12,14 +12,14 @@ namespace EasySearchApi.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<DocumentWord>()
-              .HasOne(b => b.document)
-              .WithMany(c => c.words)
-              .HasForeignKey(b => b.documentId);
+              .HasOne(b => b.Document)
+              .WithMany(c => c.Words)
+              .HasForeignKey(b => b.DocumentId);
 
             modelBuilder.Entity<DocumentWord>()
-                .HasOne(b => b.word)
-                .WithMany(w => w.documents)
-                .HasForeignKey(w => w.wordId);
+                .HasOne(b => b.Word)
+                .WithMany(w => w.Documents)
+                .HasForeignKey(w => w.WordId);
         }
 
         public DbSet<User> Users { get; set; }
@@ -27,5 +27,6 @@ namespace EasySearchApi.Data
         public DbSet<Document> Documents { get; set; }
         public DbSet<Word> Words { get; set; }
         public DbSet<DocumentWord> DocumentWord { get; set; }
+        public DbSet<ApiKey> ApiKeys { get; set; }
     }
 }

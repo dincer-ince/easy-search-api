@@ -9,124 +9,59 @@ using EasySearchApi.Data;
 using EasySearchApi.Models;
 using EasySearchApi.Repository.Repositories;
 using EasySearchApi.Repository.IRepositories;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authorization;
+using EasySearchApi.Models.DTOs;
 
 namespace EasySearchApi.Controllers
 {
+    [AllowAnonymous]
     [Route("api/[controller]")]
     [ApiController]
     public class UsersController : ControllerBase
     {
-        private readonly DataContext _context;
         private readonly IUserRepository _repository;
 
-        public UsersController(DataContext context, IUserRepository repository)
+        public UsersController(IUserRepository repository)
         {
-            _context = context;
             _repository = repository;
         }
 
-        // GET: api/Users
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+        public async Task<ActionResult<IEnumerable<UserDTO>>> GetUsers()
         {
-            return Ok(_repository.GetAll());
+            return await _repository.GetUsers();
         }
 
-        // GET: api/Users/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<User>> GetUser(int id)
+        public IQueryable<UserDTO> GetUser(string id)
         {
-          if (_context.Users == null)
-          {
-              return NotFound();
-          }
-            var user = await _context.Users.FindAsync(id);
-
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            return user;
+            return _repository.GetUser(id);
         }
 
-        // PUT: api/Users/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutUser(int id, User user)
+        public async Task<int> UpdateUser(string id, User user)
         {
-            if (id != user.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(user).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!UserExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
+            return await _repository.UpdateUser(id, user);
         }
 
-        // POST: api/Users
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        [AllowAnonymous]
         [HttpPost]
-        public async Task<ActionResult<User>> PostUser(string UserName, string Password, string Email)
+        public async Task<IdentityResult> RegisterUser(LoginDTO request)
         {
-          if (_context.Users == null)
-          {
-              return Problem("Entity set 'DataContext.Users'  is null.");
-          }
-
-            var user = new User();
-            user.Id = 0;
-            user.userName = UserName;
-            user.password = Password;
-            user.email = Email;
-            user.dictionaries = new List<Dictionary>();
-
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetUser", new { id = user.Id }, user);
+            return await _repository.RegisterUser(request.UserName, request.Password);
         }
 
-        // DELETE: api/Users/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteUser(int id)
+        public async Task<IdentityResult> DeleteUser(string id)
         {
-            if (_context.Users == null)
-            {
-                return NotFound();
-            }
-            var user = await _context.Users.FindAsync(id);
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            _context.Users.Remove(user);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            return await _repository.DeleteUser(id);
         }
 
-        private bool UserExists(int id)
+        [HttpPut("changePassword/{user_id}")]
+        public async Task<bool> ChangePassword(string user_id, PasswordUpdateDTO passwordUpdateDTO)
         {
-            return (_context.Users?.Any(e => e.Id == id)).GetValueOrDefault();
+            return await _repository.ChangePassword(passwordUpdateDTO, user_id);
         }
     }
 }

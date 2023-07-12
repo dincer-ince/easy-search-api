@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EasySearchApi.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20230107231302_wordGuidAdded")]
-    partial class wordGuidAdded
+    [Migration("20230527214233_upt2")]
+    partial class upt2
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -43,8 +43,9 @@ namespace EasySearchApi.Migrations
                     b.Property<int>("totalNumberOfWords")
                         .HasColumnType("integer");
 
-                    b.Property<int>("userId")
-                        .HasColumnType("integer");
+                    b.Property<string>("userId")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -110,22 +111,49 @@ namespace EasySearchApi.Migrations
 
             modelBuilder.Entity("EasySearchApi.Models.User", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<int>("AccessFailedCount")
                         .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("email")
-                        .IsRequired()
+                    b.Property<string>("ConcurrencyStamp")
                         .HasColumnType("text");
 
-                    b.Property<string>("password")
-                        .IsRequired()
+                    b.Property<string>("Email")
                         .HasColumnType("text");
 
-                    b.Property<string>("userName")
-                        .IsRequired()
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("LockoutEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasColumnType("text");
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("PhoneNumberConfirmed")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("TwoFactorEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("UserName")
                         .HasColumnType("text");
 
                     b.HasKey("Id");
@@ -151,7 +179,7 @@ namespace EasySearchApi.Migrations
             modelBuilder.Entity("EasySearchApi.Models.Dictionary", b =>
                 {
                     b.HasOne("EasySearchApi.Models.User", "user")
-                        .WithMany("dictionaries")
+                        .WithMany()
                         .HasForeignKey("userId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -197,11 +225,6 @@ namespace EasySearchApi.Migrations
             modelBuilder.Entity("EasySearchApi.Models.Document", b =>
                 {
                     b.Navigation("words");
-                });
-
-            modelBuilder.Entity("EasySearchApi.Models.User", b =>
-                {
-                    b.Navigation("dictionaries");
                 });
 
             modelBuilder.Entity("EasySearchApi.Models.Word", b =>

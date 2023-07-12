@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EasySearchApi.Migrations
 {
     /// <inheritdoc />
-    public partial class wordGuidAdded : Migration
+    public partial class initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -16,11 +16,21 @@ namespace EasySearchApi.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    userName = table.Column<string>(type: "text", nullable: false),
-                    password = table.Column<string>(type: "text", nullable: false),
-                    email = table.Column<string>(type: "text", nullable: false)
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    UserName = table.Column<string>(type: "text", nullable: true),
+                    NormalizedUserName = table.Column<string>(type: "text", nullable: true),
+                    Email = table.Column<string>(type: "text", nullable: true),
+                    NormalizedEmail = table.Column<string>(type: "text", nullable: true),
+                    EmailConfirmed = table.Column<bool>(type: "boolean", nullable: false),
+                    PasswordHash = table.Column<string>(type: "text", nullable: true),
+                    SecurityStamp = table.Column<string>(type: "text", nullable: true),
+                    ConcurrencyStamp = table.Column<string>(type: "text", nullable: true),
+                    PhoneNumber = table.Column<string>(type: "text", nullable: true),
+                    PhoneNumberConfirmed = table.Column<bool>(type: "boolean", nullable: false),
+                    TwoFactorEnabled = table.Column<bool>(type: "boolean", nullable: false),
+                    LockoutEnd = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    LockoutEnabled = table.Column<bool>(type: "boolean", nullable: false),
+                    AccessFailedCount = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -46,6 +56,7 @@ namespace EasySearchApi.Migrations
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Name = table.Column<string>(type: "text", nullable: false),
+                    userId1 = table.Column<string>(type: "text", nullable: false),
                     userId = table.Column<int>(type: "integer", nullable: false),
                     NumberOfDocuments = table.Column<int>(type: "integer", nullable: false),
                     totalNumberOfWords = table.Column<int>(type: "integer", nullable: false)
@@ -54,8 +65,8 @@ namespace EasySearchApi.Migrations
                 {
                     table.PrimaryKey("PK_Dictionaries", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Dictionaries_Users_userId",
-                        column: x => x.userId,
+                        name: "FK_Dictionaries_Users_userId1",
+                        column: x => x.userId1,
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -111,9 +122,9 @@ namespace EasySearchApi.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Dictionaries_userId",
+                name: "IX_Dictionaries_userId1",
                 table: "Dictionaries",
-                column: "userId");
+                column: "userId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Documents_dictionaryId",

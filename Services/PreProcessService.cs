@@ -24,7 +24,7 @@ namespace EasySearchApi.Services
         {
             DocumentDTO test = new DocumentDTO()
             {
-                text = doc.rawDocument
+                text = doc.RawDocument
             };
             var context = new MLContext();
             var emptyData = context.Data.LoadFromEnumerable(new List<DocumentDTO>());

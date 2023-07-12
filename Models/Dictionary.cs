@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace EasySearchApi.Models
 {
@@ -7,11 +8,13 @@ namespace EasySearchApi.Models
         [Key]
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
-        public List<Document> documents { get; set; }
-        public User user { get; set; }
-        public int userId { get; set; }
+        public List<Document> Documents { get; set; }
+        public int preferredSearch { get; set; }
         public int NumberOfDocuments { get; set; } = 0;
-        public int totalNumberOfWords { get; set; } = 0;
-        
+        public int TotalNumberOfWords { get; set; } = 0;
+        public string[] ExtraFieldDescription { get; set; }
+        public string UserId { get; set; }
+        [ForeignKey("UserId")]
+        public virtual User User { get; set; }
     }
 }

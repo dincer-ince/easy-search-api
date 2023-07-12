@@ -3,6 +3,7 @@ using System;
 using EasySearchApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EasySearchApi.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20230527212749_initial")]
+    partial class initial
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -40,15 +43,18 @@ namespace EasySearchApi.Migrations
                     b.Property<int>("totalNumberOfWords")
                         .HasColumnType("integer");
 
-                    b.Property<string>("userId")
+                    b.Property<int>("userId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("userId1")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("userId");
+                    b.HasIndex("userId1");
 
-                    b.ToTable("Dictionaries", (string)null);
+                    b.ToTable("Dictionaries");
                 });
 
             modelBuilder.Entity("EasySearchApi.Models.Document", b =>
@@ -77,7 +83,7 @@ namespace EasySearchApi.Migrations
 
                     b.HasIndex("dictionaryId");
 
-                    b.ToTable("Documents", (string)null);
+                    b.ToTable("Documents");
                 });
 
             modelBuilder.Entity("EasySearchApi.Models.DocumentWord", b =>
@@ -103,7 +109,7 @@ namespace EasySearchApi.Migrations
 
                     b.HasIndex("wordId");
 
-                    b.ToTable("DocumentWord", (string)null);
+                    b.ToTable("DocumentWord");
                 });
 
             modelBuilder.Entity("EasySearchApi.Models.User", b =>
@@ -155,7 +161,7 @@ namespace EasySearchApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("EasySearchApi.Models.Word", b =>
@@ -170,14 +176,14 @@ namespace EasySearchApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Words", (string)null);
+                    b.ToTable("Words");
                 });
 
             modelBuilder.Entity("EasySearchApi.Models.Dictionary", b =>
                 {
                     b.HasOne("EasySearchApi.Models.User", "user")
-                        .WithMany("dictionaries")
-                        .HasForeignKey("userId")
+                        .WithMany()
+                        .HasForeignKey("userId1")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -222,11 +228,6 @@ namespace EasySearchApi.Migrations
             modelBuilder.Entity("EasySearchApi.Models.Document", b =>
                 {
                     b.Navigation("words");
-                });
-
-            modelBuilder.Entity("EasySearchApi.Models.User", b =>
-                {
-                    b.Navigation("dictionaries");
                 });
 
             modelBuilder.Entity("EasySearchApi.Models.Word", b =>

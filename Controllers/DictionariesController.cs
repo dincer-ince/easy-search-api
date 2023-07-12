@@ -7,132 +7,78 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using EasySearchApi.Data;
 using EasySearchApi.Models;
+using Microsoft.AspNetCore.Identity;
+using EasySearchApi.Repository.IRepositories;
+using Microsoft.AspNetCore.Authorization;
+using EasySearchApi.Models.DTOs;
 
 namespace EasySearchApi.Controllers
 {
+    [AllowAnonymous]
     [Route("api/[controller]")]
     [ApiController]
     public class DictionariesController : ControllerBase
     {
-        private readonly DataContext _context;
+        private readonly IDictionaryRepository _repository;
 
-        public DictionariesController(DataContext context)
+        public DictionariesController(IDictionaryRepository repository)
         {
-            _context = context;
+            _repository = repository;
         }
 
         // GET: api/Dictionaries
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Dictionary>>> GetDictionaries()
         {
-          if (_context.Dictionaries == null)
-          {
-              return NotFound();
-          }
-            return await _context.Dictionaries.Include(c=> c.documents).ToListAsync();
+            return await _repository.GetDictionaries();
         }
 
         // GET: api/Dictionaries/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Dictionary>> GetDictionary(int id)
         {
-          if (_context.Dictionaries == null)
-          {
-              return NotFound();
-          }
-            var dictionary = await _context.Dictionaries.FindAsync(id);
-
-            if (dictionary == null)
-            {
-                return NotFound();
-            }
-
-            return dictionary;
+            return await _repository.GetById(id);
         }
 
         // PUT: api/Dictionaries/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutDictionary(int id, Dictionary dictionary)
+        public async Task<bool> PutDictionary(Dictionary dictionary)
         {
-            if (id != dictionary.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(dictionary).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!DictionaryExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
+            return await _repository.Update(dictionary);
         }
 
         // POST: api/Dictionaries
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Dictionary>> PostDictionary(int UserID, string Name)
+        public async Task<int> PostDictionary([FromBody] CreateDictionaryDTO createDictionaryDTO)
         {
-            if (_context.Dictionaries == null)
-            {
-                return Problem("Entity set 'DataContext.Dictionaries'  is null.");
-            }
-
-            var user= await _context.Users.FindAsync(UserID);
-            
-            if (user == null)
-            {
-                return Problem("User not found.");
-            }
-
-            var dictionary = new Dictionary();
-            dictionary.Name = Name;
-            dictionary.user = user;
-            dictionary.documents = new List<Document>();
-
-            _context.Dictionaries.Add(dictionary);
-            
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetDictionary", new { id = dictionary.Id }, dictionary);
+            return await _repository.PostDictionary(createDictionaryDTO);
         }
 
         // DELETE: api/Dictionaries/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteDictionary(int id)
+        public async Task<bool> DeleteDictionary(int id)
         {
-            if (_context.Dictionaries == null)
-            {
-                return NotFound();
-            }
-            var dictionary = await _context.Dictionaries.FindAsync(id);
-            if (dictionary == null)
-            {
-                return NotFound();
-            }
-
-            _context.Dictionaries.Remove(dictionary);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            return await _repository.Delete(id);
         }
 
-        private bool DictionaryExists(int id)
+        [HttpPut("changeDictionaryTitle")]
+        public async Task<bool> ChangeDictionaryTitle(int id, string name)
         {
-            return (_context.Dictionaries?.Any(e => e.Id == id)).GetValueOrDefault();
+            return await _repository.ChangeDictionaryTitle(id, name);
+        }
+
+        [HttpPut("changeDictionaryFieldDescription")]
+        public async Task<bool> ChangeDictionaryFieldDescription(int id, string[] description)
+        {
+            return await _repository.ChangeDictionaryFieldDescription(id, description);
+        }
+
+        [HttpPut("changeDictionarySearch")]
+        public async Task<bool> ChangeDictionarySearch(int dictionaryId, int technique)
+        {
+            return await _repository.ChangeDictionarySearch(dictionaryId, technique);
         }
     }
 }

@@ -1,16 +1,13 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace EasySearchApi.Models
 {
-    public class User
+    public class User : IdentityUser
     {
-        [Key]
-        public int Id { get; set; }
-        public string userName { get; set; } = string.Empty;
-        public string password { get; set; } = string.Empty;
-        public string email { get; set; } = string.Empty; 
-        public List<Dictionary> dictionaries { get; set; }
-
+        public List<Dictionary> Dictionaries { get; set; }
+        public List<ApiKey> ApiKeys { get; set; }
     }
 }
